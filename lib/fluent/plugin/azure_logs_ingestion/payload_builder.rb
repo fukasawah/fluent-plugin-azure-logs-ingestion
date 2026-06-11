@@ -15,8 +15,7 @@ module Fluent
           :content_length,
           :raw_size,
           :gzip_size,
-          :record_count,
-          keyword_init: true
+          :record_count
         ) do
           def close!
             io.close!
@@ -65,14 +64,7 @@ module Fluent
 
           validate!(raw_size: raw_size, gzip_size: gzip_size)
 
-          Result.new(
-            io: io,
-            content_encoding: content_encoding,
-            content_length: content_length,
-            raw_size: raw_size,
-            gzip_size: gzip_size,
-            record_count: record_count
-          )
+          Result.new(io, content_encoding, content_length, raw_size, gzip_size, record_count)
         rescue StandardError
           gzip_file.close! if gzip_file
           raw_file.close! if raw_file

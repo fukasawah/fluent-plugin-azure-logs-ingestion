@@ -5,10 +5,21 @@ require 'time'
 require 'uri'
 
 class TestLogger
-  def debug(*) = nil
-  def info(*) = nil
-  def warn(*) = nil
-  def error(*) = nil
+  def debug(*)
+    nil
+  end
+
+  def info(*)
+    nil
+  end
+
+  def warn(*)
+    nil
+  end
+
+  def error(*)
+    nil
+  end
 end
 
 FakeChunk = Struct.new(:events, :chunk_id) do

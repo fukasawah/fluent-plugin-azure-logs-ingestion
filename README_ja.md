@@ -5,6 +5,11 @@ Azure Monitor Logs Ingestion API を使い、Log Analytics Workspace のテー�
 > [!WARNING]
 > この plugin は試験的な実装であり、本格的な production workload での動作実績はまだ十分ではありません。
 
+## サポート環境
+
+- Ruby 2.4 以上
+- Fluentd 1.x
+
 ## インストール
 
 ### RubyGems
@@ -206,4 +211,32 @@ Log Analytics Workspace の Auxiliary tier へ送信し、DCR transformation で
 ```bash
 bundle install
 bundle exec rake test
+```
+
+この project は 1 つの `Gemfile` を使います。特定の Fluentd version を確認する場合は `FLUENTD_VERSION` を指定してください。
+
+```bash
+rvm use default
+bundle install
+bundle exec rake test
+
+# 古い version のテスト
+rvm install 2.4.10
+rvm use 2.4.10
+gem install bundler -v 2.3.27 --no-document
+FLUENTD_VERSION=1.15.3 bundle install
+FLUENTD_VERSION=1.15.3 bundle exec rake test
+
+rvm install 2.7.8
+rvm use 2.7.8
+gem install bundler -v 2.3.27 --no-document
+FLUENTD_VERSION=1.18.0 bundle install
+FLUENTD_VERSION=1.18.0 bundle exec rake test
+```
+
+RubyGems へ公開する gem は Ruby / Fluentd の組み合わせごとには分けません。gemspec の `required_ruby_version` と `fluentd` dependency が対応範囲を表すため、通常どおり 1 つの gem を build して push します。
+
+```bash
+bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict
+gem push fluent-plugin-azure-logs-ingestion-*.gem
 ```

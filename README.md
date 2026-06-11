@@ -5,6 +5,11 @@ Fluentd output plugin that sends records to Log Analytics Workspace tables by us
 > [!WARNING]
 > This plugin is experimental and has not yet been sufficiently proven in serious production workloads.
 
+## Supported Environment
+
+- Ruby 2.4 or later
+- Fluentd 1.x
+
 ## Installation
 
 ### RubyGems
@@ -206,4 +211,32 @@ The `time` in `<buffer time>` is the Fluentd event time, not a `time` field insi
 ```bash
 bundle install
 bundle exec rake test
+```
+
+This project uses a single `Gemfile`. Set `FLUENTD_VERSION` when you want to test a specific Fluentd version.
+
+```bash
+rvm use default
+bundle install
+bundle exec rake test
+
+# Old version tests
+rvm install 2.4.10
+rvm use 2.4.10
+gem install bundler -v 2.3.27 --no-document
+FLUENTD_VERSION=1.15.3 bundle install
+FLUENTD_VERSION=1.15.3 bundle exec rake test
+
+rvm install 2.7.8
+rvm use 2.7.8
+gem install bundler -v 2.3.27 --no-document
+FLUENTD_VERSION=1.18.0 bundle install
+FLUENTD_VERSION=1.18.0 bundle exec rake test
+```
+
+RubyGems releases do not need separate gems for each Ruby / Fluentd combination. The gemspec `required_ruby_version` and `fluentd` dependency declare the supported range, so build and push one gem as usual.
+
+```bash
+bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict
+gem push fluent-plugin-azure-logs-ingestion-*.gem
 ```

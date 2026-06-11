@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ruby 2.4 / Fluentd 1.15
+            ruby: '2.4'
+            fluentd: '1.15.3'
+          - name: Ruby 2.7 / Fluentd 1.18
+            ruby: '2.7'
+            fluentd: '1.18.0'
+          - name: Latest Ruby / Fluentd 1.19
+            ruby: ruby
+            fluentd: '1.19.2'
+    env:
+      FLUENTD_VERSION: ${{ matrix.fluentd }}
+
+    steps:
+      - name: Checkout
+        # actions/checkout v6.0.3
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Set up Ruby
+        # ruby/setup-ruby v1.312.0
+        uses: ruby/setup-ruby@12fd324f1d0b43274fdc8130f6980590a667c455
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: |
+          bundle install
+          bundle exec rake test
+
+      - name: Build gem
+        run: bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict

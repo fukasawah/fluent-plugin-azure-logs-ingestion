@@ -4,7 +4,7 @@ require 'socket'
 require 'thread'
 
 class FakeAzureServer
-  Request = Struct.new(:method, :path, :headers, :body, keyword_init: true)
+  Request = Struct.new(:method, :path, :headers, :body)
 
   attr_reader :requests
 
@@ -61,7 +61,7 @@ class FakeAzureServer
     end
 
     body = read_body(socket, headers)
-    request = Request.new(method: method, path: path, headers: headers, body: body)
+    request = Request.new(method, path, headers, body)
     @mutex.synchronize { @requests << request }
     status, response_headers, response_body = @handler.call(request)
     write_response(socket, status, response_headers || {}, response_body || '')

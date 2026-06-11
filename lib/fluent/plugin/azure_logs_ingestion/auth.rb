@@ -10,7 +10,7 @@ module Fluent
   module Plugin
     module AzureLogsIngestion
       class Auth
-        Token = Struct.new(:value, :expires_at, keyword_init: true)
+        Token = Struct.new(:value, :expires_at)
 
         IMDS_API_VERSION = '2018-02-01'
         APP_SERVICE_API_VERSION = '2019-08-01'
@@ -159,7 +159,7 @@ module Fluent
         def build_token_from_token_response(body)
           token = body.fetch('access_token')
           expires_at = parse_token_expiry(body)
-          Token.new(value: token, expires_at: expires_at)
+          Token.new(token, expires_at)
         end
 
         def parse_token_expiry(body)

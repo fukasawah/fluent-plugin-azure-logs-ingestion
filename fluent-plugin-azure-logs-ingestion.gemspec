@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = 'Buffered Fluentd output plugin for Azure Monitor Logs Ingestion API.'
   spec.homepage = 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion'
   spec.license = 'Apache-2.0'
-  spec.required_ruby_version = '>= 3.1'
+  spec.required_ruby_version = '>= 2.4'
   spec.metadata = {
     'rubygems_mfa_required' => 'true',
     'source_code_uri' => spec.homepage
@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ['lib']
 
-  spec.add_runtime_dependency 'fluentd', '>= 1.16', '< 2'
+  spec.add_runtime_dependency 'fluentd', '>= 1.15', '< 2'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'test-unit', '~> 3.6'
 end
