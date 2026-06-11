@@ -235,6 +235,7 @@ FLUENTD_VERSION=1.18.0 bundle exec rake test
 ```
 
 RubyGems releases do not need separate gems for each Ruby / Fluentd combination. The gemspec `required_ruby_version` and `fluentd` dependency declare the supported range, so build and push one gem as usual.
+Compatibility checks run tests against the selected Ruby / Fluentd combinations. Build the distributable gem once with the current Ruby.
 
 ```bash
 bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict
