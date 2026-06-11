@@ -36,7 +36,7 @@ gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/flu
 ```
 
 ```ruby
-gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'COMMIT_SHA'
+gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'abda3b5370ccd61282c8b234ca05042049e09d15'
 ```
 
 Then run `bundle install`.
