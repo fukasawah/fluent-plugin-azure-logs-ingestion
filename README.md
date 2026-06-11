@@ -35,7 +35,7 @@ Then run `bundle install`.
 Bundler can point directly at the GitHub repository. Specify `ref` when you want to pin a specific revision.
 
 ```ruby
-gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'abda3b5370ccd61282c8b234ca05042049e09d15'
+gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: '90782c8aad34a1101566909162d8cf02aa40c11a'
 ```
 
 Then run `bundle install`.
@@ -213,31 +213,36 @@ bundle install
 bundle exec rake test
 ```
 
-This project uses a single `Gemfile`. Set `FLUENTD_VERSION` when you want to test a specific Fluentd version.
+This project uses a single `Gemfile`. Use rbenv and `FLUENTD_VERSION` when checking older Ruby / Fluentd combinations locally.
 
 ```bash
-rvm use default
-bundle install
-bundle exec rake test
+rbenv init
+source ~/.bashrc
 
-# Old version tests
-rvm install 2.4.10
-rvm use 2.4.10
-gem install bundler -v 2.3.27 --no-document
-FLUENTD_VERSION=1.15.3 bundle install
-FLUENTD_VERSION=1.15.3 bundle exec rake test
+(
+	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.15.3
+	unset GEM_HOME GEM_PATH MY_RUBY_HOME
+	rbenv install "$RBENV_VERSION" -s
+	rbenv exec gem install bundler -v 2.3.27 --no-document
+	rbenv exec bundle _2.3.27_ install
+	rbenv exec bundle _2.3.27_ exec rake test
+)
 
-rvm install 2.7.8
-rvm use 2.7.8
-gem install bundler -v 2.3.27 --no-document
-FLUENTD_VERSION=1.18.0 bundle install
-FLUENTD_VERSION=1.18.0 bundle exec rake test
+(
+	export RBENV_VERSION=2.7.8 FLUENTD_VERSION=1.18.0
+	unset GEM_HOME GEM_PATH MY_RUBY_HOME
+	rbenv install "$RBENV_VERSION" -s
+	rbenv exec gem install bundler -v 2.3.27 --no-document
+	rbenv exec bundle _2.3.27_ install
+	rbenv exec bundle _2.3.27_ exec rake test
+)
 ```
 
-RubyGems releases do not need separate gems for each Ruby / Fluentd combination. The gemspec `required_ruby_version` and `fluentd` dependency declare the supported range, so build and push one gem as usual.
-Compatibility checks run tests against the selected Ruby / Fluentd combinations. Build the distributable gem once with the current Ruby.
+Publish one RubyGems artifact. Compatibility is checked with tests; build the distributable gem once with the current Ruby.
 
 ```bash
+bundle install
+bundle exec rake test
 bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict
 gem push fluent-plugin-azure-logs-ingestion-*.gem
 ```

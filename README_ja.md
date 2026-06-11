@@ -35,7 +35,7 @@ gem 'fluent-plugin-azure-logs-ingestion'
 Bundler で GitHub repository を直接指定でき、特定の revision に固定したい場合は、`ref` を指定します。
 
 ```ruby
-gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'abda3b5370ccd61282c8b234ca05042049e09d15'
+gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: '90782c8aad34a1101566909162d8cf02aa40c11a'
 ```
 
 その後、`bundle install` を実行してください。
@@ -213,31 +213,36 @@ bundle install
 bundle exec rake test
 ```
 
-この project は 1 つの `Gemfile` を使います。特定の Fluentd version を確認する場合は `FLUENTD_VERSION` を指定してください。
+この project は 1 つの `Gemfile` を使います。古い Ruby / Fluentd version の互換性を手元で確認する場合は、rbenv と `FLUENTD_VERSION` を使います。
 
 ```bash
-rvm use default
-bundle install
-bundle exec rake test
+rbenv init
+source ~/.bashrc
 
-# 古い version のテスト
-rvm install 2.4.10
-rvm use 2.4.10
-gem install bundler -v 2.3.27 --no-document
-FLUENTD_VERSION=1.15.3 bundle install
-FLUENTD_VERSION=1.15.3 bundle exec rake test
+(
+	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.15.3
+	unset GEM_HOME GEM_PATH MY_RUBY_HOME
+	rbenv install "$RBENV_VERSION" -s
+	rbenv exec gem install bundler -v 2.3.27 --no-document
+	rbenv exec bundle _2.3.27_ install
+	rbenv exec bundle _2.3.27_ exec rake test
+)
 
-rvm install 2.7.8
-rvm use 2.7.8
-gem install bundler -v 2.3.27 --no-document
-FLUENTD_VERSION=1.18.0 bundle install
-FLUENTD_VERSION=1.18.0 bundle exec rake test
+(
+	export RBENV_VERSION=2.7.8 FLUENTD_VERSION=1.18.0
+	unset GEM_HOME GEM_PATH MY_RUBY_HOME
+	rbenv install "$RBENV_VERSION" -s
+	rbenv exec gem install bundler -v 2.3.27 --no-document
+	rbenv exec bundle _2.3.27_ install
+	rbenv exec bundle _2.3.27_ exec rake test
+)
 ```
 
-RubyGems へ公開する gem は Ruby / Fluentd の組み合わせごとには分けません。gemspec の `required_ruby_version` と `fluentd` dependency が対応範囲を表すため、通常どおり 1 つの gem を build して push します。
-互換性確認では Ruby / Fluentd の組み合わせごとに test を実行します。配布する gem の build は現在の Ruby で 1 回だけ行います。
+RubyGems へ公開する gem は 1 つだけです。互換性は test で確認し、配布する gem は現在の Ruby で build します。
 
 ```bash
+bundle install
+bundle exec rake test
 bundle exec gem build fluent-plugin-azure-logs-ingestion.gemspec --strict
 gem push fluent-plugin-azure-logs-ingestion-*.gem
 ```
