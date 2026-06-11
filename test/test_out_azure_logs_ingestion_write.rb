@@ -38,19 +38,21 @@ class AzureLogsIngestionWriteTest < Test::Unit::TestCase
       </buffer>
     CONFIG
 
-    driver.instance.start
-    driver.instance.write(FakeChunk.new([
-      [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
-    ]))
+    begin
+      driver.instance.start
+      driver.instance.write(FakeChunk.new([
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+      ]))
 
-    ingestion_request = server.requests.last
-    assert_equal 'Bearer token-1', ingestion_request.headers['authorization']
-    assert_match(/"message":"hello"/, ingestion_request.body)
-    assert_not_match(/"TimeGenerated":/, ingestion_request.body)
-  ensure
-    driver&.instance&.shutdown
-    driver&.instance&.close
-    server&.stop
+      ingestion_request = server.requests.last
+      assert_equal 'Bearer token-1', ingestion_request.headers['authorization']
+      assert_match(/"message":"hello"/, ingestion_request.body)
+      assert_not_match(/"TimeGenerated":/, ingestion_request.body)
+    ensure
+      driver&.instance&.shutdown
+      driver&.instance&.close
+      server&.stop
+    end
   end
 
   test 'raises unrecoverable error for 400 response' do
@@ -76,18 +78,20 @@ class AzureLogsIngestionWriteTest < Test::Unit::TestCase
       </buffer>
     CONFIG
 
-    driver.instance.start
-    error = assert_raise(Fluent::UnrecoverableError) do
-      driver.instance.write(FakeChunk.new([
-        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
-      ]))
-    end
+    begin
+      driver.instance.start
+      error = assert_raise(Fluent::UnrecoverableError) do
+        driver.instance.write(FakeChunk.new([
+          [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+        ]))
+      end
 
-    assert_match(/400/, error.message)
-  ensure
-    driver&.instance&.shutdown
-    driver&.instance&.close
-    server&.stop
+      assert_match(/400/, error.message)
+    ensure
+      driver&.instance&.shutdown
+      driver&.instance&.close
+      server&.stop
+    end
   end
 
   test 'sends gzip payload when enabled' do
@@ -116,19 +120,21 @@ class AzureLogsIngestionWriteTest < Test::Unit::TestCase
       </buffer>
     CONFIG
 
-    driver.instance.start
-    driver.instance.write(FakeChunk.new([
-      [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
-    ]))
+    begin
+      driver.instance.start
+      driver.instance.write(FakeChunk.new([
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+      ]))
 
-    ingestion_request = server.requests.last
-    json = Zlib::GzipReader.new(StringIO.new(ingestion_request.body)).read
-    assert_equal 'gzip', ingestion_request.headers['content-encoding']
-    assert_match(/"message":"hello"/, json)
-  ensure
-    driver&.instance&.shutdown
-    driver&.instance&.close
-    server&.stop
+      ingestion_request = server.requests.last
+      json = Zlib::GzipReader.new(StringIO.new(ingestion_request.body)).read
+      assert_equal 'gzip', ingestion_request.headers['content-encoding']
+      assert_match(/"message":"hello"/, json)
+    ensure
+      driver&.instance&.shutdown
+      driver&.instance&.close
+      server&.stop
+    end
   end
 
   test 'keeps 429 retryable' do
@@ -154,17 +160,19 @@ class AzureLogsIngestionWriteTest < Test::Unit::TestCase
       </buffer>
     CONFIG
 
-    driver.instance.start
-    error = assert_raise(RuntimeError) do
-      driver.instance.write(FakeChunk.new([
-        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
-      ]))
-    end
+    begin
+      driver.instance.start
+      error = assert_raise(RuntimeError) do
+        driver.instance.write(FakeChunk.new([
+          [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+        ]))
+      end
 
-    assert_match(/429/, error.message)
-  ensure
-    driver&.instance&.shutdown
-    driver&.instance&.close
-    server&.stop
+      assert_match(/429/, error.message)
+    ensure
+      driver&.instance&.shutdown
+      driver&.instance&.close
+      server&.stop
+    end
   end
 end
