@@ -17,6 +17,11 @@ dcr_immutable_id="$(az deployment sub show \
   --query properties.outputs.dcrImmutableId.value \
   --output tsv)"
 
+if [[ -z "$logs_ingestion_endpoint" || -z "$dcr_immutable_id" ]]; then
+  echo "Deployment outputs are missing. Check deployment status: az deployment sub show --name ${deployment_name}" >&2
+  exit 1
+fi
+
 public_ip_address="$(az network public-ip show \
   --resource-group "$resource_group_name" \
   --name "$public_ip_name" \
@@ -47,6 +52,8 @@ gem 'fluentd', '>= 1.16', '< 2'
 gem 'fluent-plugin-azure-logs-ingestion', git: '${PLUGIN_GIT_URL}', ref: '${PLUGIN_GIT_REF}'
 EOF
 
+bundle config set --local path vendor/bundle
+bundle config set --local bin .bundle/bin
 bundle install
 
 cat > fluent.conf <<EOF
@@ -67,7 +74,8 @@ cat > fluent.conf <<EOF
     @type file
     path /tmp/fluent-ali-test-buffer.*.buf
     chunk_limit_size 900KB
-    flush_interval 5s
+    flush_mode interval
+    flush_interval 1s
   </buffer>
 </match>
 EOF
@@ -76,7 +84,7 @@ if pgrep -f 'fluentd -c fluent.conf' >/dev/null; then
   pkill -f 'fluentd -c fluent.conf'
 fi
 
-bundle exec fluentd -c fluent.conf > fluentd.log 2>&1 &
+bundle exec fluentd -c fluent.conf -vv > fluentd.log 2>&1 &
 fluentd_pid="$!"
 
 for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -84,8 +92,23 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
 {"time":"$(date -u +%FT%TZ)","message":"hello from fluent-ali-test vm","level":"info","source":"setup-vm.sh"}
 EOF
   then
-    echo "Sent a test record with fluent-cat. Fluentd PID: ${fluentd_pid}"
-    exit 0
+    echo "Sent a test record with fluent-cat. Waiting for Azure request completion. Fluentd PID: ${fluentd_pid}"
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+      if grep -q 'logs ingestion request completed' fluentd.log; then
+        echo "Azure Logs Ingestion request completed."
+        exit 0
+      fi
+      if grep -Eq 'UnrecoverableError|unexpected error|failed to flush|logs ingestion request failed| [45][0-9][0-9] ' fluentd.log; then
+        echo "Fluentd reported an ingestion error. Last fluentd log lines:" >&2
+        tail -n 80 fluentd.log >&2
+        exit 1
+      fi
+      sleep 2
+    done
+
+    echo "Timed out waiting for Azure request completion. Last fluentd log lines:" >&2
+    tail -n 80 fluentd.log >&2
+    exit 1
   fi
   sleep 2
 done
