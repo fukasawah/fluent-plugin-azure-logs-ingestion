@@ -42,13 +42,18 @@ class PayloadBuilderTest < Test::Unit::TestCase
   test 'accepts wide time span' do
     builder = Fluent::Plugin::AzureLogsIngestion::PayloadBuilder.new(gzip: false)
 
-    result = builder.build(FakeChunk.new([
-      [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), {}],
-      [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 31, 0)), {}]
-    ]))
+    begin
+      result = builder.build(FakeChunk.new([
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'first' }],
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 31, 0)), { 'message' => 'second' }]
+      ]))
 
-    assert_equal 2, result.record_count
-    result&.close!
+      records = JSON.parse(result.io.read)
+      assert_equal 2, result.record_count
+      assert_equal %w[first second], records.map { |record| record['message'] }
+    ensure
+      result&.close!
+    end
   end
 
   test 'builds gzip payload when enabled' do
@@ -120,5 +125,57 @@ class PayloadBuilderTest < Test::Unit::TestCase
     end
 
     assert_match(/payload size|gzip payload size/, error.message)
+  end
+
+  test 'rejects oversized gzip payload even when raw payload fits' do
+    builder_class = Class.new(Fluent::Plugin::AzureLogsIngestion::PayloadBuilder) do
+      private
+
+      def gzip_file_from(source_file)
+        gzip_file = Tempfile.new('azure-logs-ingestion-test-gzip')
+        gzip_file.binmode
+        source_file.rewind
+        IO.copy_stream(source_file, gzip_file)
+        gzip_file.flush
+        gzip_file.rewind
+        [gzip_file, Fluent::Plugin::AzureLogsIngestion::PayloadBuilder::MAX_BYTES + 1]
+      end
+    end
+    builder = builder_class.new(gzip: true)
+
+    error = assert_raise(Fluent::UnrecoverableError) do
+      builder.build(FakeChunk.new([
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+      ]))
+    end
+
+    assert_match(/gzip payload size/, error.message)
+  end
+
+  test 'closes gzip tempfile when validation fails after gzip is built' do
+    captured_file = nil
+    builder_class = Class.new(Fluent::Plugin::AzureLogsIngestion::PayloadBuilder) do
+      define_method(:captured_file) { captured_file }
+
+      private
+
+      define_method(:gzip_file_from) do |source_file|
+        gzip_file, gzip_size = super(source_file)
+        captured_file = gzip_file
+        [gzip_file, gzip_size]
+      end
+
+      def validate!(raw_size:, gzip_size:)
+        raise 'forced validation failure'
+      end
+    end
+    builder = builder_class.new(gzip: true)
+
+    assert_raise(RuntimeError) do
+      builder.build(FakeChunk.new([
+        [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+      ]))
+    end
+    assert_equal true, captured_file.closed?
   end
 end

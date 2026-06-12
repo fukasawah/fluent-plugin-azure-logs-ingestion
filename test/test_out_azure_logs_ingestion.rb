@@ -57,4 +57,41 @@ class AzureLogsIngestionOutputTest < Test::Unit::TestCase
 
     assert_match(/tenant_id, client_id, and client_secret/, error.message)
   end
+
+  test 'rejects invalid endpoint url' do
+    error = assert_raise(Fluent::ConfigError) do
+      create_driver(<<~CONFIG)
+        endpoint not-a-url
+        dcr_immutable_id dcr-000a00a000a00000a000000aa000a0aa
+        stream_name Custom-MyTable
+        tenant_id test-tenant
+        client_id test-client
+        client_secret test-secret
+        <buffer>
+          @type memory
+        </buffer>
+      CONFIG
+    end
+
+    assert_match(/endpoint must be a valid HTTP or HTTPS URL/, error.message)
+  end
+
+  test 'rejects invalid authority host url' do
+    error = assert_raise(Fluent::ConfigError) do
+      create_driver(<<~CONFIG)
+        endpoint https://example.eastus-1.ingest.monitor.azure.com
+        authority_host not-a-url
+        dcr_immutable_id dcr-000a00a000a00000a000000aa000a0aa
+        stream_name Custom-MyTable
+        tenant_id test-tenant
+        client_id test-client
+        client_secret test-secret
+        <buffer>
+          @type memory
+        </buffer>
+      CONFIG
+    end
+
+    assert_match(/authority_host must be a valid HTTP or HTTPS URL/, error.message)
+  end
 end

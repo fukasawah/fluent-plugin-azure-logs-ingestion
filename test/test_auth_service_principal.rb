@@ -58,4 +58,144 @@ class AuthServicePrincipalTest < Test::Unit::TestCase
       server&.stop
     end
   end
+
+  test 'raises unrecoverable error for service principal client error' do
+    server = FakeAzureServer.new do |_request|
+      [401, { 'Content-Type' => 'application/json' }, '{"error":"unauthorized"}']
+    end.start
+
+    begin
+      auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+        use_msi: false,
+        tenant_id: 'tenant-id',
+        client_id: 'client-id',
+        client_secret: 'secret',
+        authority_host: server.url,
+        logs_ingestion_scope: 'https://monitor.azure.com/.default',
+        token_refresh_skew: 300,
+        logger: TestLogger.new
+      )
+
+      error = assert_raise(Fluent::UnrecoverableError) { auth.token }
+      assert_match(/401/, error.message)
+    ensure
+      server&.stop
+    end
+  end
+
+  test 'raises retryable error for service principal server error' do
+    server = FakeAzureServer.new do |_request|
+      [500, { 'Content-Type' => 'application/json' }, '{"error":"server"}']
+    end.start
+
+    begin
+      auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+        use_msi: false,
+        tenant_id: 'tenant-id',
+        client_id: 'client-id',
+        client_secret: 'secret',
+        authority_host: server.url,
+        logs_ingestion_scope: 'https://monitor.azure.com/.default',
+        token_refresh_skew: 300,
+        logger: TestLogger.new
+      )
+
+      error = assert_raise(RuntimeError) { auth.token }
+      assert_match(/500/, error.message)
+    ensure
+      server&.stop
+    end
+  end
+
+  test 'rejects token response without expiration' do
+    server = FakeAzureServer.new do |_request|
+      [200, { 'Content-Type' => 'application/json' }, { access_token: 'token-1' }.to_json]
+    end.start
+
+    begin
+      auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+        use_msi: false,
+        tenant_id: 'tenant-id',
+        client_id: 'client-id',
+        client_secret: 'secret',
+        authority_host: server.url,
+        logs_ingestion_scope: 'https://monitor.azure.com/.default',
+        token_refresh_skew: 300,
+        logger: TestLogger.new
+      )
+
+      error = assert_raise(Fluent::UnrecoverableError) { auth.token }
+      assert_match(/expires_on or expires_in/, error.message)
+    ensure
+      server&.stop
+    end
+  end
+
+  test 'rejects token response with invalid expiration' do
+    server = FakeAzureServer.new do |_request|
+      [200, { 'Content-Type' => 'application/json' }, { access_token: 'token-1', expires_on: 'not-a-time' }.to_json]
+    end.start
+
+    begin
+      auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+        use_msi: false,
+        tenant_id: 'tenant-id',
+        client_id: 'client-id',
+        client_secret: 'secret',
+        authority_host: "#{server.url}/",
+        logs_ingestion_scope: 'https://monitor.azure.com/.default',
+        token_refresh_skew: 300,
+        logger: TestLogger.new
+      )
+
+      error = assert_raise(Fluent::UnrecoverableError) { auth.token }
+      assert_match(/invalid expiration value/, error.message)
+    ensure
+      server&.stop
+    end
+  end
+
+  test 'wraps service principal connection failures' do
+    socket = TCPServer.new('127.0.0.1', 0)
+    authority_host = "http://127.0.0.1:#{socket.addr[1]}"
+    socket.close
+
+    auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+      use_msi: false,
+      tenant_id: 'tenant-id',
+      client_id: 'client-id',
+      client_secret: 'secret',
+      authority_host: authority_host,
+      logs_ingestion_scope: 'https://monitor.azure.com/.default',
+      token_refresh_skew: 300,
+      logger: TestLogger.new
+    )
+
+    error = assert_raise(RuntimeError) { auth.token }
+    assert_match(/token request failed/, error.message)
+  end
+
+  test 'rejects invalid service principal json response' do
+    server = FakeAzureServer.new do |_request|
+      [200, { 'Content-Type' => 'application/json' }, '{']
+    end.start
+
+    begin
+      auth = Fluent::Plugin::AzureLogsIngestion::Auth.new(
+        use_msi: false,
+        tenant_id: 'tenant-id',
+        client_id: 'client-id',
+        client_secret: 'secret',
+        authority_host: server.url,
+        logs_ingestion_scope: 'https://monitor.azure.com/.default',
+        token_refresh_skew: 300,
+        logger: TestLogger.new
+      )
+
+      error = assert_raise(RuntimeError) { auth.token }
+      assert_match(/failed to parse service principal token response/, error.message)
+    ensure
+      server&.stop
+    end
+  end
 end

@@ -175,4 +175,43 @@ class AzureLogsIngestionWriteTest < Test::Unit::TestCase
       server&.stop
     end
   end
+
+  test 'closes payload when sending fails' do
+    server = FakeAzureServer.new do |request|
+      case request.path
+      when %r{/tenant/oauth2/v2.0/token}
+        [200, { 'Content-Type' => 'application/json' }, { access_token: 'token-1', expires_in: '3600' }.to_json]
+      else
+        [500, {}, 'server error']
+      end
+    end.start
+
+    driver = create_driver(<<~CONFIG)
+      endpoint #{server.url}
+      authority_host #{server.url}
+      dcr_immutable_id dcr-000a00a000a00000a000000aa000a0aa
+      stream_name Custom-MyTable
+      tenant_id tenant
+      client_id client
+      client_secret secret
+      <buffer>
+        @type memory
+      </buffer>
+    CONFIG
+
+    begin
+      driver.instance.start
+      error = assert_raise(RuntimeError) do
+        driver.instance.write(FakeChunk.new([
+          [Fluent::EventTime.from_time(Time.utc(2026, 1, 1, 0, 0, 0)), { 'message' => 'hello' }]
+        ]))
+      end
+
+      assert_match(/500/, error.message)
+    ensure
+      driver&.instance&.shutdown
+      driver&.instance&.close
+      server&.stop
+    end
+  end
 end
