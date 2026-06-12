@@ -35,7 +35,7 @@ gem 'fluent-plugin-azure-logs-ingestion'
 Bundler で GitHub repository を直接指定でき、特定の revision に固定したい場合は、`ref` を指定します。
 
 ```ruby
-gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: '90782c8aad34a1101566909162d8cf02aa40c11a'
+gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'dbb0160a8048957dafb3002799dc3e8567da06e6'
 ```
 
 その後、`bundle install` を実行してください。

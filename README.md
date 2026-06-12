@@ -35,7 +35,7 @@ Then run `bundle install`.
 Bundler can point directly at the GitHub repository. Specify `ref` when you want to pin a specific revision.
 
 ```ruby
-gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: '90782c8aad34a1101566909162d8cf02aa40c11a'
+gem 'fluent-plugin-azure-logs-ingestion', git: 'https://github.com/fukasawah/fluent-plugin-azure-logs-ingestion.git', ref: 'dbb0160a8048957dafb3002799dc3e8567da06e6'
 ```
 
 Then run `bundle install`.
