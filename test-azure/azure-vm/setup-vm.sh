@@ -35,8 +35,24 @@ ssh "${admin_username}@${public_ip_address}" \
   DCR_IMMUTABLE_ID="$dcr_immutable_id" \
   PLUGIN_GIT_URL="$plugin_git_url" \
   PLUGIN_GIT_REF="$plugin_git_ref" \
+  PUBLIC_IP_ADDRESS="$public_ip_address" \
   'bash -s' <<'REMOTE_SCRIPT'
 set -euo pipefail
+
+sync_system_clock() {
+  echo "Synchronizing system clock..."
+
+  if ! command -v chronyc >/dev/null 2>&1; then
+    echo "chronyc is not available. Check time sync status with: timedatectl status" >&2
+    return 1
+  fi
+
+  sudo chronyc makestep
+  sudo chronyc waitsync 30 0.1
+  echo "System clock synchronized: $(date --iso-8601=ns)"
+}
+
+sync_system_clock
 
 sudo apt-get update
 sudo apt-get install -y ruby ruby-dev build-essential git
@@ -88,8 +104,9 @@ bundle exec fluentd -c fluent.conf -vv > fluentd.log 2>&1 &
 fluentd_pid="$!"
 
 for _ in 1 2 3 4 5 6 7 8 9 10; do
+  echo "Current Timestamp: $(date --iso-8601=ns)"
   if bundle exec fluent-cat --host 127.0.0.1 --port 24224 azure.logs <<EOF
-{"time":"$(date -u +%FT%TZ)","message":"hello from fluent-ali-test vm","level":"info","source":"setup-vm.sh"}
+{"time":"$(date -u +%FT%TZ)","message":"hello from fluent-ali-test vm","level":"info","source":"${PUBLIC_IP_ADDRESS}"}
 EOF
   then
     echo "Sent a test record with fluent-cat. Waiting for Azure request completion. Fluentd PID: ${fluentd_pid}"
