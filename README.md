@@ -8,7 +8,7 @@ Fluentd output plugin that sends records to Log Analytics Workspace tables by us
 ## Supported Environment
 
 - Ruby 2.4 or later
-- Fluentd 1.x
+- Fluentd 1.13.0 or later, before 2.0
 
 ## Installation
 
@@ -220,7 +220,7 @@ rbenv init
 source ~/.bashrc
 
 (
-	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.15.3
+	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.13.0
 	unset GEM_HOME GEM_PATH MY_RUBY_HOME
 	rbenv install "$RBENV_VERSION" -s
 	rbenv exec gem install bundler -v 2.3.27 --no-document

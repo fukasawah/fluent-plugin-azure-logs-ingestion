@@ -8,7 +8,7 @@ Azure Monitor Logs Ingestion API を使い、Log Analytics Workspace のテー�
 ## サポート環境
 
 - Ruby 2.4 以上
-- Fluentd 1.x
+- Fluentd 1.13.0 以上、2.0 未満
 
 ## インストール
 
@@ -220,7 +220,7 @@ rbenv init
 source ~/.bashrc
 
 (
-	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.15.3
+	export RBENV_VERSION=2.4.10 FLUENTD_VERSION=1.13.0
 	unset GEM_HOME GEM_PATH MY_RUBY_HOME
 	rbenv install "$RBENV_VERSION" -s
 	rbenv exec gem install bundler -v 2.3.27 --no-document

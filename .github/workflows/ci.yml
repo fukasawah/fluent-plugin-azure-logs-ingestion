@@ -17,15 +17,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Ruby 2.4 / Fluentd 1.15
+          - name: Ruby 2.4 / Fluentd 1.13
             ruby: '2.4'
-            fluentd: '1.15.3'
+            fluentd: '1.13.0'
+            bundler: '2.3.27'
           - name: Ruby 2.7 / Fluentd 1.18
             ruby: '2.7'
             fluentd: '1.18.0'
+            bundler: '2.3.27'
           - name: Latest Ruby / Fluentd 1.19
             ruby: ruby
             fluentd: '1.19.2'
+            bundler: '2.3.27'
     env:
       FLUENTD_VERSION: ${{ matrix.fluentd }}
 
@@ -39,6 +42,7 @@ jobs:
         uses: ruby/setup-ruby@12fd324f1d0b43274fdc8130f6980590a667c455
         with:
           ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ matrix.bundler }}
           bundler-cache: true
 
       - name: Run tests

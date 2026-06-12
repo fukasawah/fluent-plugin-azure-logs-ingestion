@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ['lib']
 
-  spec.add_runtime_dependency 'fluentd', '>= 1.15', '< 2'
+  spec.add_runtime_dependency 'fluentd', '>= 1.13.0', '< 2'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'test-unit', '~> 3.6'
 end
